@@ -3,9 +3,15 @@
 #include "common.h"
 #include "formula.h"
 
+#include <functional>
+#include <unordered_set>
+#include <set>
+
+class Sheet;
+
 class Cell : public CellInterface {
 public:
-    Cell();
+    Cell(Sheet& sheet);
     ~Cell();
 
     void Set(std::string text);
@@ -13,6 +19,10 @@ public:
 
     Value GetValue() const override;
     std::string GetText() const override;
+    std::vector<Position> GetReferencedCells() const override;
+
+    bool IsReferenced() const;
+    void InvalidateAllCache(bool flag);
 
 private:
     class Impl {
@@ -42,19 +52,20 @@ private:
     
     class FormulaImpl : public Impl{
         public:
-        explicit FormulaImpl(std::string text);
+        explicit FormulaImpl(std::string text, SheetInterface& sheet);
         Value GetValue() const override;
         std::string GetText() const override;
-        virtual bool HasCache();
-        virtual void InvalidateCache();
+        bool HasCache() override;
+        void InvalidateCache() override;
+        std::vector<Position> GetReferencedCells() const override;
         private:
         mutable std::optional<FormulaInterface::Value> cache_;
         std::unique_ptr<FormulaInterface> formula_;
+        SheetInterface& sheet_;
     };
-
-    SheetInterface& sheet_;
+    
     std::unique_ptr<Impl> impl_;
+    Sheet& sheet_;
     std::set<Cell*> dependent_cells_;   
-    std::set<Cell*> referenced_cells_; 
-
+    std::set<Cell*> referenced_cells_;
 };
