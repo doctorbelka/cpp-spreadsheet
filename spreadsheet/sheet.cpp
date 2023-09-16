@@ -12,13 +12,14 @@ using namespace std::literals;
 
 Sheet::~Sheet() {}
 
-void Sheet::SetCell(Position pos, std::string text) {
-    
-    
+void Sheet::ValidityCheck(Position& pos) const{
     if (!pos.IsValid()){
         throw InvalidPositionException("Invalid cell position");
     }
-    else {
+}
+
+void Sheet::SetCell(Position pos, std::string text) {
+        ValidityCheck(pos);
         cells_.resize(std::max(pos.row + 1, int(std::size(cells_))));
         cells_[pos.row].resize(std::max(pos.col+1, int(cells_[pos.row].size())));
         if (!cells_[pos.row][pos.col]){
@@ -26,14 +27,10 @@ void Sheet::SetCell(Position pos, std::string text) {
         }
         
         cells_[pos.row][pos.col]->Set(std::move(text));
-    }
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
-    if (!pos.IsValid()){
-        throw InvalidPositionException("Invalid cell position");
-    }
-    else {
+    ValidityCheck(pos);
         if (pos.row < int(std::size(cells_)) && pos.col < int(std::size(cells_[pos.row]))) {
             if (cells_[pos.row][pos.col].get()->GetText() == "") {
                 return nullptr;
@@ -41,13 +38,9 @@ const CellInterface* Sheet::GetCell(Position pos) const {
             else return cells_[pos.row][pos.col].get();  
     }
         else return nullptr;
-}
 }
 CellInterface* Sheet::GetCell(Position pos) {
-     if (!pos.IsValid()){
-        throw InvalidPositionException("Invalid cell position");
-    }
-    else {
+ValidityCheck(pos);
         if (pos.row < int(std::size(cells_)) && pos.col < int(std::size(cells_[pos.row]))) {
             if (cells_[pos.row][pos.col].get()->GetText() == "") {
                 return nullptr;
@@ -55,19 +48,15 @@ CellInterface* Sheet::GetCell(Position pos) {
             else return cells_[pos.row][pos.col].get();  
     }
         else return nullptr;
-}
 }
 
 Cell* Sheet::Get_Cell(Position pos){
-    if (pos.IsValid()) { 
+    ValidityCheck(pos);
         if (pos.row < int(std::size(cells_)) && pos.col < int(std::size(cells_[pos.row]))) {
             return cells_[pos.row][pos.col].get();   
         } else {
             return nullptr;
-        }  
-    } else {
-        throw InvalidPositionException("invalid cell position. get_cell");
-    }
+        }   
 }
 
 const Cell* Sheet::Get_Cell(Position pos) const {
@@ -76,10 +65,7 @@ const Cell* Sheet::Get_Cell(Position pos) const {
 }
 
 void Sheet::ClearCell(Position pos) {
-     if (!pos.IsValid()){
-        throw InvalidPositionException("Invalid cell position");
-    }
-    else {
+     ValidityCheck(pos);
         if (pos.row < int(std::size(cells_)) && pos.col < int(std::size(cells_[pos.row]))) {
             if (cells_[pos.row][pos.col]) {
                 cells_[pos.row][pos.col]->Clear();
@@ -89,7 +75,6 @@ void Sheet::ClearCell(Position pos) {
                 }
         }
     }
-}
 }
 
 Size Sheet::GetPrintableSize() const {

@@ -25,6 +25,8 @@ public:
     void InvalidateAllCache(bool flag);
 
 private:
+    
+    
     class Impl {
         public:
         virtual Value GetValue() const = 0;
@@ -63,6 +65,9 @@ private:
         std::unique_ptr<FormulaInterface> formula_;
         SheetInterface& sheet_;
     };
+    
+     void CheckCircularDependencies(std::unique_ptr<Impl> temp_impl);
+     void UpdateDependencies();
     
     std::unique_ptr<Impl> impl_;
     Sheet& sheet_;

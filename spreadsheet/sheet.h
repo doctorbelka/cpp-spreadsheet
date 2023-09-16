@@ -30,5 +30,6 @@ public:
 
 
 private:
+    void ValidityCheck(Position& pos) const;
 	Table cells_;
 };

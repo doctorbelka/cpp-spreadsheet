@@ -12,20 +12,7 @@ Cell::Cell(Sheet& sheet) : impl_(std::make_unique<EmptyImpl>()),
                            sheet_(sheet) {}
 Cell::~Cell() = default;
 
-void Cell::Set(std::string text) {
-    std::unique_ptr<Impl> temp_impl;
-    
-    if (text.empty()) {
-        temp_impl = std::make_unique<EmptyImpl>();
-        
-    } else if (text.size() >= 2 && text.at(0) == FORMULA_SIGN) {
-        temp_impl = std::make_unique<FormulaImpl>(std::move(text), sheet_);
-        
-    } else {
-        temp_impl = std::make_unique<TextImpl>(std::move(text));
-    }
-    
-    //начали искать циклические зависимости
+void Cell::CheckCircularDependencies(std::unique_ptr<Impl> temp_impl){
     const Impl& temp_impl_ = *temp_impl;
     const auto temp_ref_cells = temp_impl_.GetReferencedCells();
     
@@ -67,9 +54,9 @@ void Cell::Set(std::string text) {
     } else {
         impl_ = std::move(temp_impl);
     }
-    //закончили искать циклические зависимости
-    
-    //обновляем зависимости
+}
+
+void Cell::UpdateDependencies(){
     for (Cell* refrenced : referenced_cells_) {
         refrenced->dependent_cells_.erase(this);
     }
@@ -88,6 +75,27 @@ void Cell::Set(std::string text) {
         referenced_cells_.insert(refrenced);
         refrenced->dependent_cells_.insert(this);
     }
+}
+
+void Cell::Set(std::string text) {
+    std::unique_ptr<Impl> temp_impl;
+    
+    if (text.empty()) {
+        temp_impl = std::make_unique<EmptyImpl>();
+        
+    } else if (text.size() >= 2 && text.at(0) == FORMULA_SIGN) {
+        temp_impl = std::make_unique<FormulaImpl>(std::move(text), sheet_);
+        
+    } else {
+        temp_impl = std::make_unique<TextImpl>(std::move(text));
+    }
+    
+    //начали искать циклические зависимости
+   CheckCircularDependencies(std::move(temp_impl));
+    //закончили искать циклические зависимости
+    
+    //обновляем зависимости
+    UpdateDependencies();
     //обновили зависимости
     
     //инвалидация кеша
@@ -95,7 +103,7 @@ void Cell::Set(std::string text) {
 }
 
 void Cell::Clear() {
-    impl_ = std::make_unique<EmptyImpl>();
+    this->Set("");
 }
 
 Cell::Value Cell::GetValue() const {

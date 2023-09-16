@@ -27,46 +27,37 @@ public:
             
             std::function<double(Position)> args = [&sheet](const Position pos)->double {
            
-                if (pos.IsValid()) {
-                
+                if (!pos.IsValid()) {
+                    throw FormulaError(FormulaError::Category::Ref);
+                }
+                else {
                     const auto* cell = sheet.GetCell(pos);
-                    if (cell) {
-                        
+                    if (cell) {                        
                         if (std::holds_alternative<double>(cell->GetValue())) {
-                            return std::get<double>(cell->GetValue());
-                            
-                        } else if (std::holds_alternative<std::string>(cell->GetValue())) {
-                            
+                            return std::get<double>(cell->GetValue());                          
+                        } else if (std::holds_alternative<std::string>(cell->GetValue())) {   
                             auto str_value = std::get<std::string>(cell->GetValue());
                             if (str_value != "") {
                                 std::istringstream input(str_value);
-                                double num = 0.0;
- 
+                                double num = 0.0; 
                                 if (input.eof() && input >> num) {
                                     return num;
                                 } else {
                                     throw FormulaError(FormulaError::Category::Value);
                                 }
- 
                             } else {
                                 return 0.0;
-                            } 
-                            
+                            }               
                         } else {
                             throw FormulaError(std::get<FormulaError>(cell->GetValue()));
                         }
  
                     } else {
                         return 0.0;
-                    } 
-                    
-                } else {
-                    throw FormulaError(FormulaError::Category::Ref);
-                }
+                    }     
+                } 
             };
-            
             return ast_.Execute(args);
-            
         } catch (const FormulaError& evaluate_error) {
             return evaluate_error;
         }
